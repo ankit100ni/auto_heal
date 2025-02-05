@@ -1,9 +1,15 @@
 #!/bin/bash
 
+# Check if DB_PASS is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 <DB_PASS>"
+    exit 1
+fi
+
 # Database Credentials
 DB_HOST="sql12.freesqldatabase.com"
 DB_USER="sql12760516"
-DB_PASS="Sl4qyzXg9T"
+DB_PASS="$1"  # Get password from the first argument
 DB_NAME="sql12760516"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
