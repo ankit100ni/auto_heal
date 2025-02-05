@@ -9,7 +9,7 @@ TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 
 # Path to the JSON file
-JSON_FILE="/home/ubuntu/scripts/auto_heal/artifacts/op.json"
+JSON_FILE="/home/ubuntu/reports/log.json"
 
 # Check if jq is installed
 if ! command -v jq &> /dev/null; then
