@@ -7,10 +7,10 @@ if [ -z "$1" ]; then
 fi
 
 # Database Credentials
-DB_HOST="sql12.freesqldatabase.com"
-DB_USER="sql12760516"
+DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+DB_USER="avnadmin"
 DB_PASS="$1"  # Get password from the first argument
-DB_NAME="sql12760516"
+DB_NAME="defaultdb"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 
