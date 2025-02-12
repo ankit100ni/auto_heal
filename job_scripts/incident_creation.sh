@@ -1,23 +1,25 @@
 #!/bin/bash
 
 # Database Credentials
-DB_HOST="sql12.freesqldatabase.com"
-DB_USER="sql12760516"
-DB_PASS="$1"  # Pass as an argument
-DB_NAME="sql12760516"
+DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+DB_USER="avnadmin"
+DB_PASS="$1"  # Get password from the first argument
+DB_NAME="defaultdb"
+DB_PORT="19635"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 
+
 # ServiceNow API Credentials
-SNOW_INSTANCE="dev231713.service-now.com"
+SNOW_INSTANCE="dev198775.service-now.com"
 SNOW_USER="admin"
-SNOW_PASS="D8a2/-IYhhoO"
+SNOW_PASS="mBkb^B1Fd%X1"
 
 # Query to select all records where Incident_Number is NULL
 QUERY="SELECT primary_key, Node_ID, Server_Name, Inspec_Control_ID, Inspec_Control_Title, Inspec_Status FROM $TABLE_NAME WHERE Incident_Number IS NULL;"
 
 # Execute MySQL query and iterate over results
-mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$QUERY" | while IFS=$'\t' read -r primary_key node_id server_name control_id control_title status; do
+mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$QUERY" | while IFS=$'\t' read -r primary_key node_id server_name control_id control_title status; do
 
     # Create JSON payload for ServiceNow incident
     INCIDENT_PAYLOAD=$(cat <<EOF
@@ -45,12 +47,12 @@ EOF
         echo "Created Incident: $INCIDENT_NUMBER for $control_id"
 
         # Update `pre_scan` table with Incident Number
-        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "
+        mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "
             UPDATE $TABLE_NAME SET Incident_Number='$INCIDENT_NUMBER' WHERE primary_key='$primary_key';
         "
 
         # Update `master` table with Incident Number and Status
-        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "
+        mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "
             UPDATE $MASTER_TABLE SET Incident_Number='$INCIDENT_NUMBER', Incident_Status='New' WHERE Primary_Key='$primary_key';
         "
     else
