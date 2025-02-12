@@ -1,23 +1,24 @@
 #!/bin/bash
 
 # Database Credentials
-DB_HOST="sql12.freesqldatabase.com"
-DB_USER="sql12760516"
-DB_PASS="$1"  # Pass as an argument
-DB_NAME="sql12760516"
+DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+DB_USER="avnadmin"
+DB_PASS="$1"  # Get password from the first argument
+DB_NAME="defaultdb"
+DB_PORT="19635"
+TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
-REMEDIATION_TABLE="remediation"
 
 # ServiceNow API Credentials
-SNOW_INSTANCE="dev231713"
+SNOW_INSTANCE="dev198775"
 SNOW_USER="admin"
-SNOW_PASS="D8a2/-IYhhoO"
+SNOW_PASS="mBkb^B1Fd%X1"
 SNOW_API_URL="https://$SNOW_INSTANCE.service-now.com/api/now/table/incident"
 
 # Fetch all rows with Incident_Status = 'New'
 QUERY="SELECT Primary_Key, Incident_Number, Inspec_Control_ID FROM $MASTER_TABLE WHERE Incident_Status='New';"
 
-RESULTS=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "$QUERY")
+RESULTS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$QUERY")
 
 # Loop through each result
 while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
@@ -40,11 +41,11 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
 
     # Update Incident_Status to 'In Progress' in master table
     UPDATE_QUERY="UPDATE $MASTER_TABLE SET Incident_Status='In Progress' WHERE Primary_Key='$PRIMARY_KEY';"
-    mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "$UPDATE_QUERY"
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e "$UPDATE_QUERY"
 
     # Fetch remediation command and file
     REM_QUERY="SELECT Remediation_Command, Remediation_File FROM $REMEDIATION_TABLE WHERE Inspec_Control_ID='$CONTROL_ID';"
-    REM_RESULT=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "$REM_QUERY")
+    REM_RESULT=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$REM_QUERY")
 
     # Extract values
     REM_COMMAND=$(echo "$REM_RESULT" | awk -F'\t' '{print $1}')
@@ -73,3 +74,4 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
 done <<< "$RESULTS"
 
 echo "Automation process completed."
+
