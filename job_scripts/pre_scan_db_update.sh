@@ -11,6 +11,7 @@ DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
 DB_USER="avnadmin"
 DB_PASS="$1"  # Get password from the first argument
 DB_NAME="defaultdb"
+DB_PORT="19635"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 
@@ -45,14 +46,14 @@ jq -c '.profiles[].controls[]' "$JSON_FILE" | while read -r control; do
         STATUS="failed"
 
         # Insert into pre_scan and capture primary key
-        PRIMARY_KEY=$(mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "
+        PRIMARY_KEY=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "
             INSERT INTO $TABLE_NAME (Node_ID, Server_Name, Inspec_Control_ID, Inspec_Control_Title, Inspec_Status)
             VALUES ('$NODE_ID', '$SERVER_IP', '$CONTROL_ID', '$TITLE', '$STATUS');
             SELECT LAST_INSERT_ID();
         ")
 
         # Insert into master table
-        mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" <<EOF
+        mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" "$DB_NAME" <<EOF
         INSERT INTO $MASTER_TABLE (Primary_Key, Node_ID, Inspec_Control_ID, Inspec_Control_Title)
         VALUES ('$PRIMARY_KEY', '$NODE_ID', '$CONTROL_ID', '$TITLE');
 EOF
