@@ -8,6 +8,7 @@ DB_NAME="defaultdb"
 DB_PORT="19635"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
+REMEDIATION_TABLE="remediation"
 
 # ServiceNow API Credentials
 SNOW_INSTANCE="dev198775"
@@ -15,8 +16,11 @@ SNOW_USER="admin"
 SNOW_PASS="mBkb^B1Fd%X1"
 SNOW_API_URL="https://$SNOW_INSTANCE.service-now.com/api/now/table/incident"
 
-# Fetch all rows with Incident_Status = 'New'
-QUERY="SELECT Primary_Key, Incident_Number, Inspec_Control_ID FROM $MASTER_TABLE WHERE Incident_Status='New';"
+# Fetch Node_ID from file
+NODE_ID=$(cat /hab/svc/node-management-agent/data/node_guid | tr -d '[:space:]')
+
+# Fetch all rows with Incident_Status = 'New' and matching Node_ID
+QUERY="SELECT Primary_Key, Incident_Number, Inspec_Control_ID FROM $MASTER_TABLE WHERE Incident_Status='New' AND Node_ID='$NODE_ID';"
 
 RESULTS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$QUERY")
 
