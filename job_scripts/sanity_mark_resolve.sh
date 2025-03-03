@@ -1,18 +1,20 @@
 #!/bin/bash
 
+
+source /root/.db_config
 # Database Credentials
-DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
-DB_USER="avnadmin"
-DB_PASS="$1"  # Get password from the first argument
-DB_NAME="defaultdb"
-DB_PORT="19635"
+# DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+# DB_USER="avnadmin"
+# DB_PASS="$1"  # Get password from the first argument
+# DB_NAME="defaultdb"
+# DB_PORT="19635"
 MASTER_TABLE="master"
 
 # ServiceNow API Credentials
-SNOW_INSTANCE="dev198775"
-SNOW_USER="admin"
-SNOW_PASS="mBkb^B1Fd%X1"
-SNOW_API_URL="https://$SNOW_INSTANCE.service-now.com/api/now/table/incident"
+# SNOW_INSTANCE="dev198775"
+# SNOW_USER="admin"
+# SNOW_PASS="mBkb^B1Fd%X1"
+SNOW_API_URL="https://$SNOW_INSTANCE_NAME.service-now.com/api/now/table/incident"
 
 # Get Node_ID from the file
 NODE_ID=$(cat /hab/svc/node-management-agent/data/node_guid | tr -d '[:space:]')

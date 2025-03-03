@@ -7,11 +7,13 @@ if [ -z "$1" ]; then
 fi
 
 # Database Credentials
-DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
-DB_USER="avnadmin"
-DB_PASS="$1"  # Get password from the first argument
-DB_NAME="defaultdb"
-DB_PORT="19635"
+source /root/.db_config
+
+# DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+# DB_USER="avnadmin"
+# DB_PASS="$1"  # Get password from the first argument
+# DB_NAME="defaultdb"
+# DB_PORT="19635"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 

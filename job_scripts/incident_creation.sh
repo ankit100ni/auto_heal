@@ -6,19 +6,21 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+source /root/.db_config
+
 # Database Credentials
-DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
-DB_USER="avnadmin"
-DB_PASS="$1"  # Get password from the first argument
-DB_NAME="defaultdb"
-DB_PORT="19635"
+# DB_HOST="mysql-2392fef6-ankit10093-528e.k.aivencloud.com"
+# DB_USER="avnadmin"
+# DB_PASS="$1"  # Get password from the first argument
+# DB_NAME="defaultdb"
+# DB_PORT="19635"
 TABLE_NAME="pre_scan"
 MASTER_TABLE="master"
 
 # ServiceNow API Credentials
-SNOW_INSTANCE="dev198775.service-now.com"
-SNOW_USER="admin"
-SNOW_PASS="mBkb^B1Fd%X1"
+# SNOW_INSTANCE="dev198775.service-now.com"
+# SNOW_USER="admin"
+# SNOW_PASS="mBkb^B1Fd%X1"
 
 # Path to Node ID file
 NODE_ID_FILE="/hab/svc/node-management-agent/data/node_guid"
