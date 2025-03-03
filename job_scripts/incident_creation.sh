@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Check if DB_PASS is provided
-if [ -z "$1" ]; then
-    echo "❌ Usage: $0 <DB_PASS>"
-    exit 1
-fi
-
 source /root/.db_config
 
 # Database Credentials
