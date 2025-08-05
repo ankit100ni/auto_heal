@@ -39,7 +39,64 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
         continue
     fi
 
-    # Add comment in ServiceNow ticket
+    # Fetch remediation command and file
+    REM_QUERY="SELECT Remediation_Command, Remediation_File FROM $REMEDIATION_TABLE WHERE Inspec_Control_ID='$CONTROL_ID';"
+    REM_RESULT=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$REM_QUERY")
+
+    # Extract values
+    REM_COMMAND=$(echo "$REM_RESULT" | awk -F'\t' '{print $1}')
+    REM_FILE=$(echo "$REM_RESULT" | awk -F'\t' '{print $2}')
+
+    # If both remediation file and command are empty, update ServiceNow ticket and continue
+    if [ -z "$REM_FILE" ] && [ -z "$REM_COMMAND" ]; then
+        # Call external API
+        KB_API_URL="https://progress-proc-us-east-2-1.syntha.progress.com/api/v1/kb/42cc87ce-4939-464a-830f-b0a27f296dbd/ask"
+        KB_API_TOKEN="$NUCLIA_API_KEY"
+        KB_QUERY="Provide Remediation steps for $CONTROL_ID"
+        KB_SEARCH_CONFIG="Inspec_Compliance"
+        TMP_KB_FILE=$(mktemp)
+
+        curl --location --request POST "$KB_API_URL" \
+            --header "X-NUCLIA-SERVICEACCOUNT: $KB_API_TOKEN" \
+            --header "content-type: application/json" \
+            --data-raw "{\"query\": \"$KB_QUERY\", \"search_configuration\": \"$KB_SEARCH_CONFIG\"}" \
+            -o "$TMP_KB_FILE"
+
+        echo "KB API response saved to $TMP_KB_FILE"
+
+        # Check if KB API response contains item
+        if jq -e '.item' "$TMP_KB_FILE" >/dev/null; then
+            # Concatenate all "text" values under .item.type == "answer" into a single string
+            KB_ANSWER_RAW=$(jq -r 'select(.item.type == "answer") | .item.text' "$TMP_KB_FILE" | paste -sd "" -)
+            # Replace literal \n with actual newlines for formatting
+            KB_ANSWER_FORMATTED=$(echo "$KB_ANSWER_RAW" | sed 's/\\n/\n/g')
+            # Write to a fixed filename
+            KB_ANSWER_FILE="/tmp/kb_remediation_${INCIDENT_NUMBER}.txt"
+            echo -e "$KB_ANSWER_FORMATTED" > "$KB_ANSWER_FILE"
+            sync  # Ensure file is written
+
+            # Upload KB answer as attachment to ServiceNow incident
+            curl -s -u "$SNOW_USER:$SNOW_PASS" -X POST "https://$SNOW_INSTANCE_NAME.service-now.com/api/now/attachment/file?table_name=incident&table_sys_id=$SYS_ID&file_name=kb_remediation.txt" \
+                -H "Accept: application/json" \
+                -F "file=@$KB_ANSWER_FILE" > /dev/null
+
+            # Update ServiceNow ticket status to In Progress
+            COMMENT="Automation Bot uploaded KB remediation steps. Ticket moved to In Progress."
+            curl -s -u "$SNOW_USER:$SNOW_PASS" -X PUT "$SNOW_API_URL/$SYS_ID?sysparm_exclude_ref_link=true" \
+                -H "Content-Type: application/json" \
+                -d "{\"comments\": \"$COMMENT\", \"state\": \"2\"}" > /dev/null
+
+            # Update Incident_Status to 'TRANSFERRED' in master table
+            UPDATE_QUERY="UPDATE $MASTER_TABLE SET Incident_Status='TRANSFERRED' WHERE Primary_Key='$PRIMARY_KEY';"
+            mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e "$UPDATE_QUERY"
+
+            # rm -f "$KB_ANSWER_FILE"
+            echo "No remediation solution found for Control ID: $CONTROL_ID. KB answer uploaded as attachment to ServiceNow."
+            continue
+        fi
+    fi
+
+    # Add comment in ServiceNow ticket only if remediation is available
     COMMENT="Automation Bot is looking into the ticket."
     curl -s -u "$SNOW_USER:$SNOW_PASS" -X PUT "$SNOW_API_URL/$SYS_ID?sysparm_exclude_ref_link=true" \
         -H "Content-Type: application/json" \
@@ -48,14 +105,6 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
     # Update Incident_Status to 'In Progress' in master table
     UPDATE_QUERY="UPDATE $MASTER_TABLE SET Incident_Status='In Progress' WHERE Primary_Key='$PRIMARY_KEY';"
     mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e "$UPDATE_QUERY"
-
-    # Fetch remediation command and file
-    REM_QUERY="SELECT Remediation_Command, Remediation_File FROM $REMEDIATION_TABLE WHERE Inspec_Control_ID='$CONTROL_ID';"
-    REM_RESULT=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$REM_QUERY")
-
-    # Extract values
-    REM_COMMAND=$(echo "$REM_RESULT" | awk -F'\t' '{print $1}')
-    REM_FILE=$(echo "$REM_RESULT" | awk -F'\t' '{print $2}')
 
     if [ -n "$REM_FILE" ]; then
         echo "Downloading remediation script: $REM_FILE"
