@@ -48,7 +48,7 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
     REM_FILE=$(echo "$REM_RESULT" | awk -F'\t' '{print $2}')
 
     # If both remediation file and command are empty, update ServiceNow ticket and continue
-    if [ -z "$REM_FILE" ] && [ -z "$REM_COMMAND" ]; then
+    if { [ -z "$REM_FILE" ] || [ "$REM_FILE" = "NULL" ]; } && { [ -z "$REM_COMMAND" ] || [ "$REM_COMMAND" = "NULL" ]; }; then
         # Call external API
         KB_API_URL="https://progress-proc-us-east-2-1.syntha.progress.com/api/v1/kb/42cc87ce-4939-464a-830f-b0a27f296dbd/ask"
         KB_API_TOKEN="$NUCLIA_API_KEY"
