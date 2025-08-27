@@ -24,7 +24,14 @@ NODE_ID=$(cat /hab/svc/node-management-agent/data/node_guid | tr -d '[:space:]')
 # Fetch all rows with Incident_Status = 'New' and matching Node_ID
 QUERY="SELECT Primary_Key, Incident_Number, Inspec_Control_ID FROM $MASTER_TABLE WHERE Incident_Status='New' AND Node_ID='$NODE_ID';"
 
+# Debug: Check what incidents exist for this node
+DEBUG_QUERY="SELECT Incident_Status, COUNT(*) as count FROM $MASTER_TABLE WHERE Node_ID='$NODE_ID' GROUP BY Incident_Status;"
+echo "Debug: Incident statuses for Node_ID '$NODE_ID':"
+mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -e "$DEBUG_QUERY"
+
 RESULTS=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$QUERY")
+
+echo "Debug: Found $(echo "$RESULTS" | wc -l) incidents with status 'New'"
 
 # Loop through each result
 while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
@@ -46,6 +53,9 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
     # Extract values
     REM_COMMAND=$(echo "$REM_RESULT" | awk -F'\t' '{print $1}')
     REM_FILE=$(echo "$REM_RESULT" | awk -F'\t' '{print $2}')
+
+    # Debug: Print the extracted values
+    echo "Debug: REM_COMMAND='$REM_COMMAND', REM_FILE='$REM_FILE'"
 
     # If both remediation file and command are empty, update ServiceNow ticket and continue
     if [ -z "$REM_FILE" ] && [ -z "$REM_COMMAND" ]; then
@@ -131,4 +141,3 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
 done <<< "$RESULTS"
 
 echo "Automation process completed."
-
