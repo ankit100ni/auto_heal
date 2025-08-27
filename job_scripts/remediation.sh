@@ -94,6 +94,8 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
             echo "No remediation solution found for Control ID: $CONTROL_ID. KB answer uploaded as attachment to ServiceNow."
             continue
         fi
+        # If KB API did not return an answer, also continue to next incident
+        continue
     fi
 
     # Add comment in ServiceNow ticket only if remediation is available
