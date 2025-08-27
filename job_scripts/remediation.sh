@@ -40,7 +40,7 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
     fi
 
     # Fetch remediation command and file
-    REM_QUERY="SELECT Remediation_Command, Remediation_File FROM $REMEDIATION_TABLE WHERE Inspec_Control_ID='$CONTROL_ID';"
+    REM_QUERY="SELECT COALESCE(Remediation_Command, '') as cmd, COALESCE(Remediation_File, '') as file FROM $REMEDIATION_TABLE WHERE Inspec_Control_ID='$CONTROL_ID';"
     REM_RESULT=$(mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -D "$DB_NAME" -se "$REM_QUERY")
 
     # Extract values
@@ -48,7 +48,7 @@ while IFS=$'\t' read -r PRIMARY_KEY INCIDENT_NUMBER CONTROL_ID; do
     REM_FILE=$(echo "$REM_RESULT" | awk -F'\t' '{print $2}')
 
     # If both remediation file and command are empty, update ServiceNow ticket and continue
-    if { [ -z "$REM_FILE" ] || [ "$REM_FILE" = "NULL" ]; } && { [ -z "$REM_COMMAND" ] || [ "$REM_COMMAND" = "NULL" ]; }; then
+    if [ -z "$REM_FILE" ] && [ -z "$REM_COMMAND" ]; then
         # Call external API
         KB_API_URL="https://progress-proc-us-east-2-1.syntha.progress.com/api/v1/kb/42cc87ce-4939-464a-830f-b0a27f296dbd/ask"
         KB_API_TOKEN="$NUCLIA_API_KEY"
